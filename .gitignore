@@ -1,0 +1,195 @@
+# ========================================
+# input.sh - Bash Library Project
+# ========================================
+
+# Temporary development files
+test_*.sh
+debug_*.sh
+temp*.sh
+scratch*.sh
+
+# Build/execution outputs
+*.log
+*.out
+
+# ========================================
+# IDE - IntelliJ IDEA
+# ========================================
+
+# User-specific workspace files (ignore)
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/shelf/
+.idea/httpRequests/
+.idea/dataSources/
+.idea/dataSources.local.xml
+
+# Project files (tracked)
+# .idea/.gitignore
+# .idea/modules.xml
+# .idea/misc.xml
+# .idea/vcs.xml
+
+# Module files (auto-generated)
+*.iml
+
+# ========================================
+# IDE - Other Editors
+# ========================================
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.*.sw?
+
+# Emacs
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-workspace
+
+# ========================================
+# OS - Generated Files
+# ========================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+.directory
+.Trash-*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ========================================
+# AI Tools - Claude Code & Serena
+# ========================================
+
+# Serena MCP cache (auto-generated)
+.serena/cache/
+.serena/memories/
+
+# Serena config (tracked)
+# .serena/project.yml
+# .serena/.gitignore
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Claude Code global settings (tracked if desired)
+# .claude/settings.json
+
+# ========================================
+# Version Control - Git
+# ========================================
+
+# Conflict resolution backups
+*.orig
+
+# ========================================
+# Bash - Testing & Analysis
+# ========================================
+
+# ShellCheck outputs
+shellcheck.log
+shellcheck-*.log
+
+# Test coverage
+coverage/
+*.gcov
+
+# ========================================
+# Bash - Documentation
+# ========================================
+
+# Generated documentation (if applicable)
+# docs/build/
+# docs/_build/
+
+# Committed docs (tracked)
+# docs/*.md
+# docs/*.gif
+
+# ========================================
+# Dependencies - Node.js (if used)
+# ========================================
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# ========================================
+# Dependencies - Python (if used)
+# ========================================
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# ========================================
+# Build Artifacts
+# ========================================
+
+# Compiled binaries (unlikely for bash)
+*.o
+*.so
+*.a
+*.exe
+
+# Distribution packages
+dist/
+build/
+*.tar.gz
+*.zip
+
+# ========================================
+# Security - Secrets & Credentials
+# ========================================
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Secrets, tokens, keys
+*secret*
+*credential*
+*token*
+*.key
+*.pem
+
+# SSH keys
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# ========================================
+# Explicit Inclusions (!pattern)
+# ========================================
+
+# Track these files despite other rules
+!example.sh
+!README.md
+!CLAUDE.md
+!LICENSE
