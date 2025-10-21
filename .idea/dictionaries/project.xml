@@ -1,18 +1,45 @@
 <component name="ProjectDictionaryState">
   <dictionary name="project">
     <words>
+      <w>acltype</w>
       <w>archzfs</w>
+      <w>ashift</w>
+      <w>autotrim</w>
+      <w>bootctl</w>
       <w>bootfs</w>
       <w>canmount</w>
+      <w>chpasswd</w>
       <w>dkms</w>
+      <w>dnodesize</w>
+      <w>efibootmgr</w>
+      <w>eochroot</w>
+      <w>eograll</w>
+      <w>eozbm</w>
+      <w>hwclock</w>
+      <w>inetutils</w>
+      <w>initramfs</w>
+      <w>kexec</w>
+      <w>localdomain</w>
+      <w>mkconfig</w>
+      <w>mkinitcpio</w>
       <w>mountpoint</w>
+      <w>networkmanager</w>
+      <w>nmconnection</w>
       <w>noauto</w>
       <w>openzfs</w>
       <w>pipefail</w>
+      <w>posixacl</w>
+      <w>raidz</w>
+      <w>resolvconf</w>
+      <w>systohc</w>
+      <w>vconsole</w>
+      <w>vmlinuz</w>
       <w>zfsbootmenu</w>
+      <w>zfsutils</w>
       <w>zoneinfo</w>
       <w>zpool</w>
       <w>zram</w>
+      <w>zroot</w>
     </words>
   </dictionary>
 </component>

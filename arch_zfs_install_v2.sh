@@ -2,7 +2,7 @@
 # suppress inspection SpellCheckingInspection
 #
 # Arch Linux ZFS Installation Script v2.0
-# 
+#
 # Description:
 #   Automated installer for Arch Linux with ZFS root filesystem.
 #   Supports multi-disk pools, kernel validation, boot environments,
@@ -210,16 +210,16 @@ confirm() {
   local prompt="$1"
   local default="${2:-no}"
   local response
-  
+
   if [[ "${default}" == "yes" ]]; then
     prompt="${prompt} [Y/n]: "
   else
     prompt="${prompt} [y/N]: "
   fi
-  
+
   read -r -p "${prompt}" response
   response="${response:-${default}}"
-  
+
   case "${response,,}" in
     y|yes)
       return 0
@@ -244,7 +244,7 @@ check_root() {
 }
 
 #######################################
-# Check if system is booted in UEFI mode
+# Check if the system is booted in UEFI mode
 # Returns:
 #   Exits if not UEFI
 #######################################
@@ -262,11 +262,11 @@ check_uefi() {
 #######################################
 check_internet() {
   info "Checking internet connectivity..."
-  
+
   if ! ping -c 3 -W 5 archlinux.org &> /dev/null; then
     err "No internet connection. Please connect to the network and try again."
   fi
-  
+
   success "Internet connection verified"
 }
 
@@ -277,11 +277,11 @@ check_internet() {
 #######################################
 sync_clock() {
   info "Synchronizing system clock..."
-  
+
   if ! timedatectl set-ntp true; then
     err "Failed to enable NTP time synchronization"
   fi
-  
+
   sleep 2
   success "System clock synchronized"
 }
@@ -297,7 +297,7 @@ sync_clock() {
 #######################################
 detect_timezone() {
   info "Detecting timezone via IP geolocation..."
-  
+
   local timezone
 
   # Method 1: ip-api.com (returns plain text, no parsing needed)
@@ -341,9 +341,9 @@ detect_timezone() {
 #######################################
 detect_disks() {
   info "Detecting available disks..."
-  
+
   available_disks=()
-  
+
   while IFS= read -r disk; do
     # Skip loop devices, ram disks, and mounted disks
     if [[ ! "${disk}" =~ ^(loop|ram|sr|dm-) ]]; then
@@ -353,11 +353,11 @@ detect_disks() {
       info "  Found: /dev/${disk} (${size})"
     fi
   done < <(lsblk -ndo NAME | sort)
-  
+
   if (( ${#available_disks[@]} == 0 )); then
     err "No suitable disks found for installation"
   fi
-  
+
   success "Detected ${#available_disks[@]} available disk(s)"
 }
 
@@ -366,14 +366,14 @@ detect_disks() {
 # Globals:
 #   available_disks
 # Outputs:
-#   Writes formatted disk list to stdout
+#   Writes the formatted disk list to stdout
 #######################################
 display_disks() {
   local disk_info
   echo ""
   echo "Available disks:"
   echo "────────────────────────────────────────"
-  
+
   local index=1
   for disk_info in "${available_disks[@]}"; do
     local disk="${disk_info%%:*}"
@@ -381,7 +381,7 @@ display_disks() {
     printf "  [%2d] /dev/%-10s %s\n" "${index}" "${disk}" "${size}"
     (( index++ ))
   done
-  
+
   echo "────────────────────────────────────────"
   echo ""
 }
@@ -401,12 +401,12 @@ display_disks() {
 #######################################
 validate_kernel_compatibility() {
   info "Validating kernel compatibility with ZFS..."
-  
+
   compatible_kernels=()
-  
+
   # Check available kernels in Arch repos
   local -a kernels=("linux-lts" "linux" "linux-zen" "linux-hardened")
-  
+
   for kernel in "${kernels[@]}"; do
     # Check if the kernel package exists
     # For ARCH if pacman -Ss "^${kernel}$" &> /dev/null; then
@@ -421,11 +421,11 @@ validate_kernel_compatibility() {
       fi
     fi
   done
-  
+
   if (( ${#compatible_kernels[@]} == 0 )); then
     err "No compatible kernels found"
   fi
-  
+
   success "Found ${#compatible_kernels[@]} compatible kernel(s)"
   return 0
 }
@@ -441,7 +441,7 @@ display_kernel_options() {
   echo ""
   echo "Available kernels:"
   echo "────────────────────────────────────────"
-  
+
   local index=1
   for kernel in "${compatible_kernels[@]}"; do
     local desc=""
@@ -462,7 +462,7 @@ display_kernel_options() {
     printf "  [%d] %-20s %s\n" "${index}" "${kernel}" "${desc}"
     (( index++ ))
   done
-  
+
   echo "────────────────────────────────────────"
   echo ""
 }
@@ -483,9 +483,9 @@ display_kernel_options() {
 get_disk_selection() {
   local num
   print_header "Disk Selection"
-  
+
   display_disks
-  
+
   echo "Select installation mode:"
   echo "  [1] Single disk"
   echo "  [2] Mirror (2+ disks)"
@@ -493,10 +493,10 @@ get_disk_selection() {
   echo "  [4] RAID-Z2 (4+ disks, double parity)"
   echo "  [5] RAID-Z3 (5+ disks, triple parity)"
   echo ""
-  
+
   local mode_choice
   read -r -p "Enter mode [1-5]: " mode_choice
-  
+
   case "${mode_choice}" in
     1)
       pool_type="single"
@@ -522,20 +522,20 @@ get_disk_selection() {
       err "Invalid selection"
       ;;
   esac
-  
+
   info "Selected pool type: ${pool_type}"
-  
+
   # Get disk selections
   echo ""
   echo "Select disks for installation (minimum: ${min_disks})"
   echo "Enter disk numbers separated by spaces (e.g., 1 2 3)"
   echo ""
-  
+
   display_disks
-  
+
   local disk_input
   read -r -p "Enter disk numbers: " disk_input
-  
+
   install_disks=()
   for num in ${disk_input}; do
     if [[ "${num}" =~ ^[0-9]+$ ]] && (( num >= 1 && num <= ${#available_disks[@]} )); then
@@ -546,23 +546,23 @@ get_disk_selection() {
       err "Invalid disk number: ${num}"
     fi
   done
-  
+
   if (( ${#install_disks[@]} < min_disks )); then
     err "Pool type '${pool_type}' requires at least ${min_disks} disk(s), but ${#install_disks[@]} selected"
   fi
-  
+
   # Display selected disks
   echo ""
   info "Selected ${#install_disks[@]} disk(s) for ${pool_type} pool:"
   for disk in "${install_disks[@]}"; do
     info "  - ${disk}"
   done
-  
+
   # Confirm destructive operation
   echo ""
   warn "⚠️  WARNING: This will DESTROY all data on the selected disks!"
   echo ""
-  
+
   if ! confirm "Continue with installation?" "no"; then
     err "Installation cancelled by user"
   fi
@@ -579,12 +579,12 @@ get_pool_name() {
   echo ""
   read -r -p "Enter ZFS pool name [${DEFAULT_POOL_NAME}]: " pool_name
   pool_name="${pool_name:-${DEFAULT_POOL_NAME}}"
-  
+
   # Validate pool name
   if [[ ! "${pool_name}" =~ ^[a-zA-Z][a-zA-Z0-9_-]*$ ]]; then
     err "Invalid pool name. Must start with letter and contain only letters, numbers, hyphens, and underscores."
   fi
-  
+
   info "Pool name: ${pool_name}"
 }
 
@@ -599,12 +599,12 @@ get_hostname() {
   echo ""
   read -r -p "Enter hostname [${DEFAULT_HOSTNAME}]: " host_name
   host_name="${host_name:-${DEFAULT_HOSTNAME}}"
-  
+
   # Validate host_name
   if [[ ! "${host_name}" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$ ]]; then
     err "Invalid hostname format"
   fi
-  
+
   info "Hostname: ${host_name}"
 }
 
@@ -619,13 +619,13 @@ get_root_password() {
   echo ""
   local password1
   local password2
-  
+
   while true; do
     read -r -s -p "Enter root password: " password1
     echo ""
     read -r -s -p "Confirm root password: " password2
     echo ""
-    
+
     if [[ "${password1}" == "${password2}" ]]; then
       if [[ -z "${password1}" ]]; then
         warn "Password cannot be empty"
@@ -653,23 +653,23 @@ get_user_info() {
   echo ""
   if confirm "Create a non-root user account?" "yes"; then
     create_user="yes"
-    
+
     read -r -p "Enter username: " username
-    
+
     # Validate username
     if [[ ! "${username}" =~ ^[a-z]([a-z0-9_-]{0,31})$ ]]; then
       err "Invalid username. Must start with lowercase letter, max 32 chars."
     fi
-    
+
     local password1
     local password2
-    
+
     while true; do
       read -r -s -p "Enter password for ${username}: " password1
       echo ""
       read -r -s -p "Confirm password: " password2
       echo ""
-      
+
       if [[ "${password1}" == "${password2}" ]]; then
         if [[ -z "${password1}" ]]; then
           warn "Password cannot be empty"
@@ -729,13 +729,13 @@ get_timezone() {
   info "Current detected timezone: ${detected_timezone}"
   read -r -p "Enter timezone [${detected_timezone}]: " time_zone
   time_zone="${time_zone:-${detected_timezone}}"
-  
+
   # Validate time_zone
   if [[ ! -f "/usr/share/zoneinfo/${time_zone}" ]]; then
     warn "Timezone file not found, using default"
     time_zone="${DEFAULT_TIMEZONE}"
   fi
-  
+
   info "Timezone: ${time_zone}"
 }
 
@@ -750,17 +750,17 @@ get_timezone() {
 get_kernel_choice() {
   local kernel_num
   print_header "Kernel Selection"
-  
+
   display_kernel_options
-  
+
   read -r -p "Select kernel [1]: " kernel_num
   kernel_num="${kernel_num:-1}"
 
-  if [[ ! "timezone${kernel_num}" =~ ^[0-9]+$ ]] || (( kernel_num < 1 || kernel_num > ${#compatible_kernels[@]} )); then
+  if [[ ! "${kernel_num}" =~ ^[0-9]+$ ]] || (( kernel_num < 1 || kernel_num > ${#compatible_kernels[@]} )); then
     err "Invalid kernel selection"
   fi
-  
-  kernel_choice=3"${compatible_kernels[$((kernel_num - 1))]}"
+
+  kernel_choice="${compatible_kernels[$((kernel_num - 1))]}"
   success "Selected kernel: ${kernel_choice}"
 }
 
@@ -774,16 +774,16 @@ get_kernel_choice() {
 get_bootloader_choice() {
   local bootloader_num
   print_header "Bootloader Selection"
-  
+
   echo "Available bootloaders:"
   echo "  [1] GRUB (recommended, most compatible)"
   echo "  [2] systemd-boot (simple, UEFI only)"
   echo "  [3] ZFSBootMenu (advanced, boot environments)"
   echo ""
-  
+
   read -r -p "Select bootloader [1]: " bootloader_num
   bootloader_num="${bootloader_num:-1}"
-  
+
   case "${bootloader_num}" in
     1)
       bootloader_choice="grub"
@@ -798,7 +798,7 @@ get_bootloader_choice() {
       err "Invalid bootloader selection"
       ;;
   esac
-  
+
   success "Selected bootloader: ${bootloader_choice}"
 }
 
@@ -813,16 +813,16 @@ get_bootloader_choice() {
 get_swap_config() {
   local swap_choice
   print_header "Swap Configuration"
-  
+
   echo "Swap options:"
   echo "  [1] Swap partition (${DEFAULT_SWAP_SIZE})"
   echo "  [2] ZRAM (compressed RAM)"
   echo "  [3] No swap"
   echo ""
-  
+
   read -r -p "Select swap type [1]: " swap_choice
   swap_choice="${swap_choice:-1}"
-  
+
   case "${swap_choice}" in
     1)
       swap_type="partition"
@@ -839,7 +839,7 @@ get_swap_config() {
       err "Invalid swap selection"
       ;;
   esac
-  
+
   info "Swap type: ${swap_type}"
 }
 
@@ -853,16 +853,16 @@ get_swap_config() {
 #######################################
 get_boot_environment_config() {
   print_header "Boot Environment Configuration"
-  
+
   echo "Boot environments allow multiple system snapshots that can be selected at boot."
   echo ""
-  
+
   if confirm "Enable boot environment support?" "no"; then
     enable_boot_environments="yes"
-    
+
     read -r -p "Enter boot environment prefix [${be_prefix}]: " be_prefix
     be_prefix="${be_prefix:-arch}"
-    
+
     info "Boot environments enabled with prefix: ${be_prefix}"
   else
     enable_boot_environments="no"
@@ -884,7 +884,7 @@ get_boot_environment_config() {
 get_network_config() {
   local iface iface_num
   print_header "Network Configuration"
-  
+
   # Detect network interfaces
   local -a interfaces=()
   while IFS= read -r iface; do
@@ -892,13 +892,13 @@ get_network_config() {
       interfaces+=("${iface}")
     fi
   done < <(ip -o link show | awk -F': ' '{print $2}')
-  
+
   if (( ${#interfaces[@]} == 0 )); then
     warn "No network interfaces detected"
     network_interface=""
     return
   fi
-  
+
   echo "Available network interfaces:"
   local index=1
   for iface in "${interfaces[@]}"; do
@@ -906,28 +906,28 @@ get_network_config() {
     (( index++ ))
   done
   echo ""
-  
+
   read -r -p "Select network interface [1]: " iface_num
   iface_num="${iface_num:-1}"
-  
+
   if [[ ! "${iface_num}" =~ ^[0-9]+$ ]] || (( iface_num < 1 || iface_num > ${#interfaces[@]} )); then
     err "Invalid interface selection"
   fi
-  
+
   network_interface="${interfaces[$((iface_num - 1))]}"
   info "Selected interface: ${network_interface}"
-  
+
   echo ""
   if confirm "Use DHCP for network configuration?" "yes"; then
     use_dhcp="yes"
     info "Network will use DHCP"
   else
     use_dhcp="no"
-    
+
     read -r -p "Enter static IP address (e.g., 192.168.1.100/24): " static_ip
     read -r -p "Enter gateway: " static_gateway
     read -r -p "Enter DNS servers (space-separated): " static_dns
-    
+
     info "Static IP configured: ${static_ip}"
   fi
 }
@@ -941,7 +941,7 @@ get_network_config() {
 #######################################
 display_config_summary() {
   print_header "Configuration Summary"
-  
+
   echo "Installation Configuration:"
   echo "────────────────────────────────────────"
   echo "Pool Type:        ${pool_type}"
@@ -1033,15 +1033,15 @@ partition_disks() {
 #######################################
 format_efi_partitions() {
   info "Formatting EFI partitions..."
-  
+
   for disk in "${install_disks[@]}"; do
     local efi_part="${disk}1"
-    
+
     # Handle NVMe naming (e.g., /dev/nvme0n1p1)
     if [[ "${disk}" =~ nvme ]]; then
       efi_part="${disk}p1"
     fi
-    
+
     mkfs.vfat -F32 -n EFI "${efi_part}" || err "Failed to format ${efi_part}"
     success "Formatted ${efi_part}"
   done
@@ -1059,17 +1059,17 @@ setup_swap_partitions() {
   if [[ "${swap_type}" != "partition" ]]; then
     return 0
   fi
-  
+
   info "Setting up swap partitions..."
-  
+
   for disk in "${install_disks[@]}"; do
     local swap_part="${disk}2"
-    
+
     # Handle NVMe naming
     if [[ "${disk}" =~ nvme ]]; then
       swap_part="${disk}p2"
     fi
-    
+
     mkswap -L swap "${swap_part}" || err "Failed to create swap on ${swap_part}"
     swapon "${swap_part}" || warn "Failed to activate swap on ${swap_part}"
     success "Swap enabled on ${swap_part}"
@@ -1087,11 +1087,11 @@ setup_swap_partitions() {
 #######################################
 load_zfs_modules() {
   info "Loading ZFS kernel modules..."
-  
+
   if ! modprobe zfs; then
     err "Failed to load ZFS kernel module. Ensure ZFS is installed in live environment."
   fi
-  
+
   success "ZFS modules loaded"
 }
 
@@ -1112,26 +1112,26 @@ create_zfs_pool() {
   local -a pool_partitions=()
   for disk in "${install_disks[@]}"; do
     local part_num=2
-    
+
     # Adjust partition number if swap exists
     if [[ "${swap_type}" == "partition" ]]; then
       part_num=3
     fi
-    
+
     local zfs_part="${disk}${part_num}"
-    
+
     # Handle NVMe naming
     if [[ "${disk}" =~ nvme ]]; then
       zfs_part="${disk}p${part_num}"
     fi
-    
+
     pool_partitions+=("${zfs_part}")
   done
-  
+
   info "Creating ZFS pool: ${pool_name}"
   info "Pool type: ${pool_type}"
   info "Partitions: ${pool_partitions[*]}"
-  
+
   # Build zpool create command
   local -a zpool_cmd=(
     "zpool" "create"
@@ -1139,24 +1139,24 @@ create_zfs_pool() {
     "-o" "cachefile=none"
   )
   local prop
-  
+
   # Add pool properties
   for prop in "${ZFS_POOL_PROPS[@]}"; do
     zpool_cmd+=("-o" "${prop}")
   done
-  
+
   # Add filesystem properties
   for prop in "${ZFS_FS_PROPS[@]}"; do
     zpool_cmd+=("-O" "${prop}")
   done
-  
+
   # Add mount options
   zpool_cmd+=(
     "-O" "mountpoint=none"
     "-R" "${DEFAULT_MOUNT_POINT}"
     "${pool_name}"
   )
-  
+
   # Add pool topology based on type
   case "${pool_type}" in
     single)
@@ -1172,14 +1172,14 @@ create_zfs_pool() {
       err "Unknown pool type: ${pool_type}"
       ;;
   esac
-  
+
   # Create the pool
   if ! "${zpool_cmd[@]}"; then
     err "Failed to create ZFS pool"
   fi
-  
+
   success "ZFS pool '${pool_name}' created successfully"
-  
+
   # Display pool status
   zpool status "${pool_name}"
 }
@@ -1195,62 +1195,62 @@ create_zfs_pool() {
 #######################################
 create_zfs_datasets() {
   info "Creating ZFS datasets..."
-  
+
   if [[ "${enable_boot_environments}" == "yes" ]]; then
     # Boot environment layout
     zfs create -o mountpoint=none "${pool_name}/ROOT" \
       || err "Failed to create ROOT dataset"
-    
+
     zfs create -o mountpoint=/ -o canmount=noauto "${pool_name}/ROOT/${be_prefix}" \
       || err "Failed to create boot environment dataset"
-    
+
     zfs create -o mountpoint=none "${pool_name}/data" \
       || err "Failed to create data dataset"
-    
+
     zfs create -o mountpoint=/home "${pool_name}/data/home" \
       || err "Failed to create home dataset"
-    
+
     zfs create -o mountpoint=/root "${pool_name}/data/root" \
       || err "Failed to create root home dataset"
-    
+
     # Mount root filesystem
     zpool set bootfs="${pool_name}/ROOT/${be_prefix}" "${pool_name}" \
       || err "Failed to set bootfs property"
-    
+
     zfs mount "${pool_name}/ROOT/${be_prefix}" \
       || err "Failed to mount root dataset"
-    
+
   else
     # Simple layout without boot environments
     zfs create -o mountpoint=none "${pool_name}/ROOT" \
       || err "Failed to create ROOT dataset"
-    
+
     zfs create -o mountpoint=/ -o canmount=noauto "${pool_name}/ROOT/default" \
       || err "Failed to create root dataset"
-    
+
     zfs create -o mountpoint=/home "${pool_name}/home" \
       || err "Failed to create home dataset"
-    
+
     # Mount root filesystem
     zpool set bootfs="${pool_name}/ROOT/default" "${pool_name}" \
       || err "Failed to set bootfs property"
-    
+
     zfs mount "${pool_name}/ROOT/default" \
       || err "Failed to mount root dataset"
   fi
-  
+
   # Create additional datasets
   zfs create -o mountpoint=/var/log "${pool_name}/var" \
     || warn "Failed to create var dataset"
-  
+
   zfs create -o mountpoint=/var/cache "${pool_name}/cache" \
     || warn "Failed to create cache dataset"
-  
+
   # Mount all datasets
   zfs mount -a || warn "Some datasets failed to mount"
-  
+
   success "ZFS datasets created and mounted"
-  
+
   # Display dataset tree
   zfs list -t all -r "${pool_name}"
 }
@@ -1265,22 +1265,22 @@ create_zfs_datasets() {
 #######################################
 mount_efi_partition() {
   info "Mounting EFI partition..."
-  
+
   # Use first disk's EFI partition
   local first_disk="${install_disks[0]}"
   local efi_part="${first_disk}1"
-  
+
   # Handle NVMe naming
   if [[ "${first_disk}" =~ nvme ]]; then
     efi_part="${first_disk}p1"
   fi
-  
+
   mkdir -p "${DEFAULT_MOUNT_POINT}/boot/efi" \
     || err "Failed to create EFI mount point"
-  
+
   mount "${efi_part}" "${DEFAULT_MOUNT_POINT}/boot/efi" \
     || err "Failed to mount EFI partition"
-  
+
   success "EFI partition mounted at ${DEFAULT_MOUNT_POINT}/boot/efi"
 }
 
@@ -1295,24 +1295,24 @@ mount_efi_partition() {
 #######################################
 configure_archzfs_repo() {
   info "Configuring ArchZFS repository..."
-  
+
   # Add ArchZFS repo to pacman.conf
   cat >> /etc/pacman.conf <<EOF
 
 [archzfs]
 Server = ${ARCHZFS_REPO_URL}
 EOF
-  
-  # Import and sign GPG key
+
+  # Import and sign a GPG key
   pacman-key --recv-keys "${ARCHZFS_GPG_KEY}" \
     || warn "Failed to receive ArchZFS GPG key"
-  
+
   pacman-key --lsign-key "${ARCHZFS_GPG_KEY}" \
     || warn "Failed to locally sign ArchZFS GPG key"
-  
+
   # Refresh package databases
   pacman -Sy || err "Failed to refresh package databases"
-  
+
   success "ArchZFS repository configured"
 }
 
@@ -1326,11 +1326,11 @@ EOF
 #######################################
 install_base_system() {
   print_header "Base System Installation"
-  
+
   configure_archzfs_repo
-  
+
   info "Installing base packages (this may take several minutes)..."
-  
+
   # Determine ZFS package based on kernel
   local zfs_package=""
   case "${kernel_choice}" in
@@ -1350,7 +1350,7 @@ install_base_system() {
       zfs_package="zfs-dkms"
       ;;
   esac
-  
+
   # Build package list
   local -a packages=(
     "debian-minimal"
@@ -1361,7 +1361,7 @@ install_base_system() {
     "${zfs_package}"
     "zfsutils-linux"
   )
-  
+
   # Add bootloader packages
   case "${bootloader_choice}" in
     grub)
@@ -1374,7 +1374,7 @@ install_base_system() {
       packages+=("efibootmgr" "kexec-tools")
       ;;
   esac
-  
+
   # Add network packages
   packages+=(
     "networkmanager"
@@ -1385,7 +1385,7 @@ install_base_system() {
     "wget"
     "curl"
   )
-  
+
   # Add development tools
   packages+=(
     "git"
@@ -1397,17 +1397,18 @@ install_base_system() {
     "man-pages"
     "sudo"
   )
-  
+
   # Add ZRAM if needed
   if [[ "${swap_type}" == "zram" ]]; then
     packages+=("systemd-zram-generator")
   fi
-  
+
   # Install packages
-  if ! debootstrap --arch amd64 --include="${packages[*]}" stable "${DEFAULT_MOUNT_POINT}" "${DEBIAN_REPO}"; then
+  if ! debootstrap --arch amd64 --include="${packages[*]}" stable \
+    "${DEFAULT_MOUNT_POINT}" "${DEBIAN_REPO}"; then
     err "Failed to install base system"
   fi
-  
+
   success "Base system installed successfully"
 }
 
@@ -1420,11 +1421,11 @@ install_base_system() {
 #######################################
 generate_fstab() {
   info "Generating fstab..."
-  
+
   # Generate fstab with UUIDs
   genfstab -U "${DEFAULT_MOUNT_POINT}" >> "${DEFAULT_MOUNT_POINT}/etc/fstab" \
     || err "Failed to generate fstab"
-  
+
   # Add ZFS root to fstab for compatibility
   if [[ "${enable_boot_environments}" == "yes" ]]; then
     echo "${pool_name}/ROOT/${be_prefix} / zfs defaults,noatime 0 0" \
@@ -1433,7 +1434,7 @@ generate_fstab() {
     echo "${pool_name}/ROOT/default / zfs defaults,noatime 0 0" \
       >> "${DEFAULT_MOUNT_POINT}/etc/fstab"
   fi
-  
+
   success "fstab generated"
 }
 
@@ -1450,10 +1451,10 @@ generate_fstab() {
 #######################################
 configure_system() {
   print_header "System Configuration"
-  
+
   info "Configuring system (running in chroot)..."
-  
-  # Create configuration script to run in chroot
+
+  # Create configuration scripts to run in chroot
   cat > "${DEFAULT_MOUNT_POINT}/tmp/configure.sh" <<'EOCHROOT'
 #!/bin/bash
 set -euo pipefail
@@ -1576,7 +1577,7 @@ mkinitcpio -P
 
 echo "Configuration complete!"
 EOCHROOT
-  
+
   # Replace placeholders
   sed -i "s|__TIMEZONE__|${time_zone}|g" "${DEFAULT_MOUNT_POINT}/tmp/configure.sh"
   sed -i "s|__LOCALE__|${locale}|g" "${DEFAULT_MOUNT_POINT}/tmp/configure.sh"
@@ -1595,15 +1596,15 @@ EOCHROOT
   sed -i "s|__SWAP_TYPE__|${swap_type}|g" "${DEFAULT_MOUNT_POINT}/tmp/configure.sh"
   sed -i "s|__ARCHZFS_REPO_URL__|${ARCHZFS_REPO_URL}|g" "${DEFAULT_MOUNT_POINT}/tmp/configure.sh"
   sed -i "s|__ARCHZFS_GPG_KEY__|${ARCHZFS_GPG_KEY}|g" "${DEFAULT_MOUNT_POINT}/tmp/configure.sh"
-  
+
   chmod +x "${DEFAULT_MOUNT_POINT}/tmp/configure.sh"
-  
+
   # Run configuration in chroot
   arch-chroot "${DEFAULT_MOUNT_POINT}" /tmp/configure.sh \
     || err "Failed to configure system in chroot"
-  
+
   rm "${DEFAULT_MOUNT_POINT}/tmp/configure.sh"
-  
+
   success "System configuration complete"
 }
 
@@ -1617,10 +1618,10 @@ EOCHROOT
 #######################################
 set_root_password() {
   info "Setting root password..."
-  
+
   echo "root:${root_password}" | arch-chroot "${DEFAULT_MOUNT_POINT}" chpasswd \
     || err "Failed to set root password"
-  
+
   success "Root password set"
 }
 
@@ -1638,20 +1639,20 @@ create_user_account() {
   if [[ "${create_user}" != "yes" ]]; then
     return 0
   fi
-  
+
   info "Creating user account: ${username}..."
-  
+
   arch-chroot "${DEFAULT_MOUNT_POINT}" useradd -m -G wheel -s /bin/bash "${username}" \
     || err "Failed to create user account"
-  
+
   echo "${username}:${user_password}" | arch-chroot "${DEFAULT_MOUNT_POINT}" chpasswd \
     || err "Failed to set user password"
-  
-  # Enable sudo for wheel group
+
+  # Enable sudo for the wheel group
   sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' \
     "${DEFAULT_MOUNT_POINT}/etc/sudoers" \
     || warn "Failed to enable sudo for wheel group"
-  
+
   success "User account created: ${username}"
 }
 
@@ -1672,7 +1673,7 @@ create_user_account() {
 #######################################
 install_grub() {
   info "Installing GRUB bootloader..."
-  
+
   # Determine root dataset
   local root_dataset
   if [[ "${enable_boot_environments}" == "yes" ]]; then
@@ -1680,7 +1681,7 @@ install_grub() {
   else
     root_dataset="${pool_name}/ROOT/default"
   fi
-  
+
   # Create GRUB configuration script
   cat > "${DEFAULT_MOUNT_POINT}/tmp/install_grub.sh" <<EOGRALL
 #!/bin/bash
@@ -1697,14 +1698,14 @@ grub-mkconfig -o /boot/grub/grub.cfg
 
 echo "GRUB installation complete"
 EOGRALL
-  
+
   chmod +x "${DEFAULT_MOUNT_POINT}/tmp/install_grub.sh"
-  
+
   arch-chroot "${DEFAULT_MOUNT_POINT}" /tmp/install_grub.sh \
     || err "Failed to install GRUB"
-  
+
   rm "${DEFAULT_MOUNT_POINT}/tmp/install_grub.sh"
-  
+
   success "GRUB installed successfully"
 }
 
@@ -1720,7 +1721,7 @@ EOGRALL
 #######################################
 install_systemd_boot() {
   info "Installing systemd-boot..."
-  
+
   # Determine root dataset
   local root_dataset
   if [[ "${enable_boot_environments}" == "yes" ]]; then
@@ -1728,11 +1729,11 @@ install_systemd_boot() {
   else
     root_dataset="${pool_name}/ROOT/default"
   fi
-  
+
   # Install systemd-boot
   arch-chroot "${DEFAULT_MOUNT_POINT}" bootctl install \
     || err "Failed to install systemd-boot"
-  
+
   # Create loader configuration
   cat > "${DEFAULT_MOUNT_POINT}/boot/efi/loader/loader.conf" <<EOF
 default arch.conf
@@ -1740,24 +1741,24 @@ timeout 5
 console-mode max
 editor no
 EOF
-  
+
   # Create boot entry
   mkdir -p "${DEFAULT_MOUNT_POINT}/boot/efi/loader/entries"
-  
+
   cat > "${DEFAULT_MOUNT_POINT}/boot/efi/loader/entries/arch.conf" <<EOF
 title   Arch Linux
 linux   /vmlinuz-${kernel_choice}
 initrd  /initramfs-${kernel_choice}.img
 options zfs=${root_dataset} rw
 EOF
-  
+
   # Copy kernel and initramfs to EFI partition
   cp "${DEFAULT_MOUNT_POINT}/boot/vmlinuz-${kernel_choice}" \
     "${DEFAULT_MOUNT_POINT}/boot/efi/"
-  
+
   cp "${DEFAULT_MOUNT_POINT}/boot/initramfs-${kernel_choice}.img" \
     "${DEFAULT_MOUNT_POINT}/boot/efi/"
-  
+
   success "systemd-boot installed successfully"
 }
 
@@ -1771,10 +1772,10 @@ EOF
 #######################################
 install_zfsbootmenu() {
   info "Installing ZFSBootMenu..."
-  
+
   warn "ZFSBootMenu installation requires additional configuration"
   warn "Please refer to ZFSBootMenu documentation for complete setup"
-  
+
   # Create basic ZFSBootMenu configuration
   cat > "${DEFAULT_MOUNT_POINT}/tmp/install_zbm.sh" <<'EOZBM'
 #!/bin/bash
@@ -1792,14 +1793,14 @@ cp /boot/vmlinuz-* /boot/efi/EFI/ZBM/vmlinuz.efi || true
 
 echo "ZFSBootMenu setup initiated (requires post-install configuration)"
 EOZBM
-  
+
   chmod +x "${DEFAULT_MOUNT_POINT}/tmp/install_zbm.sh"
-  
+
   arch-chroot "${DEFAULT_MOUNT_POINT}" /tmp/install_zbm.sh \
     || warn "ZFSBootMenu installation incomplete"
-  
+
   rm "${DEFAULT_MOUNT_POINT}/tmp/install_zbm.sh"
-  
+
   warn "ZFSBootMenu requires additional setup after first boot"
   info "Install zfsbootmenu from AUR and run: generate-zbm"
 }
@@ -1813,7 +1814,7 @@ EOZBM
 #######################################
 install_bootloader() {
   print_header "Bootloader Installation"
-  
+
   case "${bootloader_choice}" in
     grub)
       install_grub
@@ -1828,7 +1829,7 @@ install_bootloader() {
       err "Unknown bootloader: ${bootloader_choice}"
       ;;
   esac
-  
+
   success "Bootloader installation complete"
 }
 
@@ -1846,15 +1847,15 @@ install_bootloader() {
 #######################################
 configure_zfs_cache() {
   info "Configuring ZFS cache..."
-  
+
   mkdir -p "${DEFAULT_MOUNT_POINT}/etc/zfs"
-  
+
   zpool set cachefile=/etc/zfs/zpool.cache "${pool_name}" \
     || warn "Failed to set cache file"
-  
+
   cp /etc/zfs/zpool.cache "${DEFAULT_MOUNT_POINT}/etc/zfs/zpool.cache" \
     || warn "Failed to copy cache file"
-  
+
   success "ZFS cache configured"
 }
 
@@ -1868,17 +1869,17 @@ configure_zfs_cache() {
 #######################################
 cleanup_installation() {
   info "Cleaning up installation..."
-  
+
   # Unmount EFI partition
   umount -R "${DEFAULT_MOUNT_POINT}/boot/efi" 2>/dev/null || true
-  
+
   # Export ZFS pool
   zfs umount -a 2>/dev/null || true
   zpool export "${pool_name}" 2>/dev/null || true
-  
+
   # Deactivate swap
   swapoff -a 2>/dev/null || true
-  
+
   success "Cleanup complete"
 }
 
@@ -1892,7 +1893,7 @@ cleanup_installation() {
 #######################################
 display_post_install_info() {
   print_header "Installation Complete!"
-  
+
   echo ""
   echo "╔════════════════════════════════════════════════════════════════╗"
   echo "║                  INSTALLATION SUCCESSFUL!                      ║"
@@ -1908,7 +1909,7 @@ display_post_install_info() {
   echo "  Bootloader:    ${bootloader_choice}"
   echo "  Pool:          ${pool_name}"
   echo ""
-  
+
   if [[ "${bootloader_choice}" == "zfsbootmenu" ]]; then
     echo "⚠️  ZFSBootMenu Post-Install Steps:"
     echo "  1. After first boot, install zfsbootmenu from AUR"
@@ -1916,7 +1917,7 @@ display_post_install_info() {
     echo "  3. Reboot to use ZFSBootMenu"
     echo ""
   fi
-  
+
   echo "Useful commands:"
   echo "  zpool status              # Check pool health"
   echo "  zfs list                  # List datasets"
@@ -1927,7 +1928,7 @@ display_post_install_info() {
   echo "  man zpool"
   echo "  https://wiki.archlinux.org/title/ZFS"
   echo ""
-  
+
   success "Enjoy your new Arch Linux ZFS system!"
 }
 
@@ -1947,24 +1948,24 @@ display_post_install_info() {
 #######################################
 main() {
   print_header "Arch Linux ZFS Installer v${SCRIPT_VERSION}"
-  
+
   echo "This script will install Arch Linux with ZFS root filesystem."
   echo "Press Ctrl+C to cancel at any time."
   echo ""
-  
+
   # Pre-flight checks
   check_root
   check_uefi
   check_internet
   sync_clock
   detect_timezone
-  
+
   # Hardware detection
   detect_disks
-  
+
   # Kernel validation
   validate_kernel_compatibility
-  
+
   # Collect user input
   get_disk_selection
   get_pool_name
@@ -1979,37 +1980,37 @@ main() {
   get_swap_config
   get_boot_environment_config
   get_network_config
-  
+
   # Display configuration and confirm
   display_config_summary
-  
+
   if ! confirm "Proceed with installation?" "no"; then
     err "Installation cancelled by user"
   fi
-  
+
   # Installation steps
   partition_disks
   format_efi_partitions
   setup_swap_partitions
-  
+
   create_zfs_pool
   create_zfs_datasets
   mount_efi_partition
-  
+
   install_base_system
   generate_fstab
-  
+
   configure_system
   set_root_password
   create_user_account
-  
+
   install_bootloader
   configure_zfs_cache
-  
+
   cleanup_installation
-  
+
   display_post_install_info
-  
+
   return 0
 }
 
